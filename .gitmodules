@@ -1,0 +1,3 @@
+[submodule "tools/rootAVD"]
+	path = tools/rootAVD
+	url = https://github.com/newbit1/rootAVD.git
