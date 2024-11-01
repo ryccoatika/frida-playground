@@ -1,4 +1,6 @@
 Java.perform(() => {
+    console.log("")
+
     hook_build_properties()
     hook_android_id()
     hook_telephony_manager()
@@ -7,227 +9,219 @@ Java.perform(() => {
 })
 
 const hook_build_properties = () => {
-    // TODO: find great properties key value for bypass
     const properties = {
-        "BOARD": "",
-        "BOOTLOADER": "",
-        "BRAND": "",
-        "CPU_ABI": "",
+        "BOARD": "a15",
+        "BOOTLOADER": "A155FXXS1AXA4",
+        "BRAND": "samsung",
+        "CPU_ABI": "arm64-v8a",
         "CPU_ABI2": "",
-        "DEVICE": "",
-        "DISPLAY": "",
-        "FINGERPRINT": "",
-        "HARDWARE": "",
-        "HOST": "",
-        "ID": "",
-        "MANUFACTURER": "",
-        "MODEL": "",
-        "ODM_SKU": "",
-        "PRODUCT": "",
-        "RADIO": "",
-        "SERIAL": "",
-        "SKU": "",
-        "SOC_MANUFACTURER": "",
-        "SOC_MODEL": "",
-        "SUPPORTED_32_BIT_ABIS": "",
-        "SUPPORTED_64_BIT_ABIS": "",
-        "SUPPORTED_ABIS": "",
-        "TAGS": "",
-        "TIME": "",
-        "TYPE": "",
-        "USER": "",
+        "DEVICE": "a15",
+        "DISPLAY": "UP1A.231005.007.A155FXXS1AXA4",
+        "FINGERPRINT": "samsung/a15nsxx/a15:14/UP1A.231005.007/A155FXXS1AXA4:user/release-keys",
+        "HARDWARE": "mt6789",
+        "HOST": "21DKGB17",
+        "ID": "UP1A.231005.007",
+        "MANUFACTURER": "samsung",
+        "MODEL": "SM-A155F",
+        "ODM_SKU": "hcesim",
+        "PRODUCT": "a15nsxx",
+        "RADIO": "unknown",
+        "SERIAL": "unknown",
+        "SKU": "hcesim",
+        "SOC_MANUFACTURER": "Mediatek",
+        "SOC_MODEL": "MT6789V/CD",
+        "TAGS": "release-keys",
+        "TYPE": "user",
+        "USER": "dpi",
     }
     const Build = Java.use("android.os.Build")
 
     for (let key in properties) {
-        const value = properties[key]
-
         var field = Build.class.getDeclaredField(key)
         field.setAccessible(true)
-        field.set(null, value)
+
+        const mockedValue = properties[key]
+        field.set(null, mockedValue)
+
+        console.log(`[~] Hooked Build.${key} => ${mockedValue}`)
     }
-    console.log("[*] Build Properties hook loaded")
 
-    // TODO: find great Partition value for bypass
-    Build.getFingerprintedPartitions.overload().implementation = () => {
-        console.log("[~] Build.getFingerprintedPartitions() called")
+    Build.TIME.value = 1706055275000
+    console.log(`[~] Hooked Build.TIME => ${Build.TIME.value}`)
 
-        var result = this.getFingerprintedPartitions()
+    Build.SUPPORTED_ABIS.value = Java.array("java.lang.String", ["arm64-v8a", "armeabi-v7a", "armeabi"])
+    console.log(`[~] Hooked Build.SUPPORTED_ABIS => ${Build.SUPPORTED_ABIS.value}`)
 
-        var partitionList = Java.cast(result, Java.use("java.util.List"))
-        for (var i = 0; i < partitionList.size(); i++) {
-            var partition = partitionList.get(i)
-            console.log(`[~] Partition ${i}: ${partition.toString()}`)
+    Build.SUPPORTED_32_BIT_ABIS.value = Java.array("java.lang.String", ["armeabi-v7a", "armeabi"])
+    console.log(`[~] Hooked Build.SUPPORTED_32_BIT_ABIS => ${Build.SUPPORTED_32_BIT_ABIS.value}`)
+
+    Build.SUPPORTED_64_BIT_ABIS.value = Java.array("java.lang.String", ["arm64-v8a"])
+    console.log(`[~] Hooked Build.SUPPORTED_64_BIT_ABIS => ${Build.SUPPORTED_64_BIT_ABIS.value}`)
+
+    Build.getFingerprintedPartitions.overload().implementation = function () {
+        const mockedPartitions = Java.use("java.util.ArrayList").$new()
+
+        function createPartition(fingerprint, name, timeMs) {
+            const partition = Java.use("android.os.Build$Partition")
+            return partition.$new(
+                fingerprint,
+                name,
+                timeMs
+            )
         }
 
-        return result
+        mockedPartitions.add(createPartition("samsung/a15nsxx/a15:12/SP1A.210812.016/A155FXXS1AXA4:user/release-keys", "bootimage", 1706056043000))
+        mockedPartitions.add(createPartition("samsung/a15nsxx/a15:12/SP1A.210812.016/A155FXXS1AXA4:user/release-keys", "odm", 1706056043000))
+        mockedPartitions.add(createPartition("samsung/a15nsxx/a15:14/UP1A.231005.007/A155FXXS1AXA4:user/release-keys", "product", 1706055275000))
+        mockedPartitions.add(createPartition("samsung/a15nsxx/a15:14/UP1A.231005.007/A155FXXS1AXA4:user/release-keys", "system_ext", 1706055275000))
+        mockedPartitions.add(createPartition("samsung/a15nsxx/a15:14/UP1A.231005.007/A155FXXS1AXA4:user/release-keys", "system", 1706055275000))
+        mockedPartitions.add(createPartition("samsung/a15nsxx/a15:12/SP1A.210812.016/A155FXXS1AXA4:user/release-keys", "vendor", 1706056043000))
+
+        console.log(`[~] Hooked Build.getFingerprintedPartitions() => ${mockedPartitions.toString}`);
+
+        return mockedPartitions;
     }
-    console.log("[*] Build getFingerprintedPartitions() hook loaded")
+    console.log("[*] Loaded Hook Build.getFingerprintedPartitions()")
 
-    // TODO: find great RadioVersion value for bypass
-    Build.getRadioVersion.overload().implementation = () => {
-        console.log("[~] Build.getRadioVersion() called")
+    Build.getRadioVersion.overload().implementation = function () {
+        console.log(" Build.getRadioVersion() called")
 
-        var result = this.getRadioVersion()
+        const mockedValue = "A155FXXU1AWKA,A155FXXU1AWKA"
 
-        console.log(`[~] RadioVersion: ${result}`)
+        console.log(`[~] Hooked Build.getRadioVersion() => ${mockedValue}`)
 
-        return result
+        return mockedValue
     }
-    console.log("[*] Build getRadioVersion() hook loaded")
-
-    // TODO: find great Serial value for bypass
-    Build.getSerial.overload().implementation = () => {
-        console.log("[~] Build.getSerial() called")
-
-        var result = this.getSerial()
-
-        console.log(`[~] Serial: ${result}`)
-
-        return result
-    }
-    console.log("[*] Build getSerial() hook loaded")
+    console.log("[*] Loaded Hook Build.getRadioVersion()")
 }
 
 const hook_android_id = () => {
-    // TODO: find great androidID value for bypass
-    const androidID = ""
-    const Secure = Java.use("android.provider.Settings.Secure")
+    const Secure = Java.use("android.provider.Settings$Secure")
 
-    Secure.getString.overload("android.content.ContentResolver", "java.lang.String").implementation = (cr, key) => {
-        console.log(`[~] Secure.getString(${cr.toString()}, ${key}) called`)
-
+    Secure.getString.overload("android.content.ContentResolver", "java.lang.String").implementation = function (cr, key) {
         if (key == "android_id") {
-            const value = this.getString(cr, key)
+            const mockedValue = "0fc98b5e7e1465e3"
 
-            console.log(`[~] ${key}: ${value} (replaced with: ${androidID})`)
+            console.log(`[~] Hooked Secure.getString(${cr.toString()}, ${key}) => ${mockedValue}`)
 
-            return androidID
-        } else {
-            const value = this.getString(cr, key)
-
-            console.log(`[~] ${key}: ${value}`)
-
-            return value
+            return mockedValue
         }
+        return this.getString(cr, key)
     }
-    console.log("[*] Secure.getString() hook loaded")
+    console.log("[*] Loaded Hook Secure.getString()")
 
 }
 
 const hook_telephony_manager = () => {
     const TelephonyManager = Java.use("android.telephony.TelephonyManager")
 
-    // TODO: find great Line1Number value for bypass
-    TelephonyManager.getLine1Number.overload().implementation = () => {
-        console.log("[~] Build.getLine1Number() called")
+    TelephonyManager.getLine1Number.overload().implementation = function () {
+        const mockedValue = "+6285156574223"
 
-        var result = this.getLine1Number()
+        console.log(`[~] Hooked TelephonyManager.getLine1Number() => ${mockedValue}`)
 
-        console.log(`[~] Line1Number: ${result}`)
-
-        return result
+        return mockedValue
     }
-    console.log("[*] Build.getLine1Number() hook loaded")
+    console.log("[*] Loaded Hook TelephonyManager.getLine1Number()")
 
-    // TODO: find great DeviceId value for bypass
-    TelephonyManager.getDeviceId.overload().implementation = () => {
-        console.log("[~] Build.getDeviceId() called")
+    TelephonyManager.getNetworkOperatorName.overload().implementation = function () {
+        const mockedValue = "by.U"
 
-        var result = this.getDeviceId()
+        console.log(`[~] Hooked TelephonyManager.getNetworkOperatorName() => ${mockedValue}`)
 
-        console.log(`[~] DeviceId: ${result}`)
-
-        return result
+        return mockedValue
     }
-    console.log("[*] Build.getDeviceId() hook loaded")
+    console.log("[*] Loaded Hook TelephonyManager.getNetworkOperatorName()")
 
-    // TODO: find great SubscriberId value for bypass
-    TelephonyManager.getSubscriberId.overload().implementation = () => {
-        console.log("[~] Build.getSubscriberId() called")
+    TelephonyManager.getSimOperatorName.overload().implementation = function () {
+        const mockedValue = "Telkomsel"
 
-        var result = this.getSubscriberId()
+        console.log(`[~] TelephonyManager.getSimOperatorName() => ${mockedValue}`)
 
-        console.log(`[~] SubscriberId: ${result}`)
-
-        return result
+        return mockedValue
     }
-    console.log("[*] Build.getSubscriberId() hook loaded")
-
-    // TODO: find great NetworkOperatorName value for bypass
-    TelephonyManager.getNetworkOperatorName.overload().implementation = () => {
-        console.log("[~] Build.getNetworkOperatorName() called")
-
-        var result = this.getNetworkOperatorName()
-
-        console.log(`[~] NetworkOperatorName: ${result}`)
-
-        return result
-    }
-    console.log("[*] Build.getNetworkOperatorName() hook loaded")
-
-    // TODO: find great SimOperatorName value for bypass
-    TelephonyManager.getSimOperatorName.overload().implementation = () => {
-        console.log("[~] Build.getSimOperatorName() called")
-
-        var result = this.getSimOperatorName()
-
-        console.log(`[~] SimOperatorName: ${result}`)
-
-        return result
-    }
-    console.log("[*] Build.getSimOperatorName() hook loaded")
+    console.log("[*] Loaded Hook TelephonyManager.getSimOperatorName()")
 }
 
 const hook_system_properties = () => {
-    // TODO: find known properties key value for bypass
-    const properties = {
-    }
     const SystemProperties = Java.use("android.os.SystemProperties")
 
-    SystemProperties.get.overload("java.lang.String").implementation = (key) => {
-        console.log(`[~] SystemProperties.get(${key}) called`)
+    SystemProperties.get.overload("java.lang.String").implementation = function (key) {
+        const mockedValue = props[key] ?? ""
 
-        if (key in properties) {
-            const alteredValue = properties[key]
-            const originalValue = this.get(key)
+        console.log(`[~] Hooked SystemProperties.get(${key}) => ${mockedValue}`)
 
-            console.log(`[~] ${key}: ${originalValue} (replaced with: ${alteredValue})`)
-
-            return key
-        } else {
-            const value = this.get(key)
-
-            console.log(`[~] ${key}: ${alteredValue}`)
-
-            return value
-        }
+        return mockedValue
     }
-    console.log("[*] SystemProperties.get(String) hook loaded")
+    console.log("[*] Loaded Hook SystemProperties.get(String)")
 }
 
 const hook_has_file = () => {
-    // TODO: find known file list for bypass
-    const bypassFiles = {
+    const bypassFiles = [
+        "/dev/socket/genyd",
+        "/dev/socket/baseband_genyd",
+        "/dev/socket/qemud",
+        "/dev/qemu_pipe",
+        "/dev/qemu_trace",
+        "/dev/goldfish_address_space",
+        "/dev/goldfish_pipe",
+        "/dev/goldfish_sync",
+        "/ueventd.android_x86.rc",
+        "/x86.prop",
+        "/ueventd.ttVM_x86.rc",
+        "/init.ttVM_x86.rc",
+        "/fstab.ttVM_x86",
+        "/fstab.vbox86",
+        "/init.vbox86.rc",
+        "/ueventd.vbox86.rc",
+        "/fstab.andy",
+        "/ueventd.andy.rc",
+        "/fstab.nox",
+        "/init.nox.rc",
+        "/ueventd.nox.rc",
+        "/system/bin/nox-prop",
+        "/system/bin/nox-vbox-sf",
+        "/system/bin/noxd",
+        "/system/bin/qemu-props",
+        "/system/lib/libc_malloc_debug_qemu.so",
+        "/sys/qemu_trace",
+        "/sys/goldfish_address_space",
+        "/sys/goldfish_battery",
+        "/sys/goldfish_pipe",
+        "/sys/goldfish_sync",
+        "/sys/kvm",
+    ]
 
-    }
+    const keywords = [
+        "nox",
+        "bluestacks",
+        "geny",
+        "andy",
+        "vbox",
+        "goldfish",
+        "qemu"
+    ]
+
     const File = Java.use("java.io.File")
 
-    File.exists.overload().implementation = () => {
-        console.log("[~] File.exists() called")
-
+    File.exists.overload().implementation = function () {
         const absolutePath = this.getAbsolutePath()
-        console.log(`[~] AbsolutePath: ${absolutePath}`)
 
-        if (absolutePath in bypassFiles) {
-            const result = this.exists()
-            console.log(`[~] Exists: ${result} (hooked to false)`)
+        if (bypassFiles.includes(absolutePath)) {
+            console.log(`[~] Hooked File(${absolutePath}).exists() => false`)
             return false
         } else {
-            const result = this.exists()
-            console.log(`[~] Exists: ${result}`)
-            return result
+            for (let i = 0; i < keywords.length; i++) {
+                const keyword = keywords[i];
+
+                if (absolutePath.includes(keyword)) {
+                    console.log(`[~] Hooked File(${absolutePath}).exists() => false`)
+                    return false
+                }
+            }
+
+            return this.exists()
         }
     }
-    console.log("[*] File.exists() hook loaded")
+    console.log("[*] Loaded Hook File.exists()")
 }
