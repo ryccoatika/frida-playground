@@ -82,6 +82,7 @@ I prefer to use these tools.
 I know there is unnecessary bash script in this workspace, but I need to sharpen my bash skills as well.
 
     .
+    |── apk-playground
     ├── magisk-modules              # Android magisk modules
     │   └── ...
     ├── resources                   # Device tools and apps
