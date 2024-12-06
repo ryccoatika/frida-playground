@@ -1,7 +1,11 @@
 Java.perform(() => {
     console.log("")
 
-    hook_build_properties()
+    try {
+        hook_build_properties();
+    } catch (error) {
+        console.log("[!] Failed to load android.os.Build")
+    }
     hook_android_id()
     hook_telephony_manager()
     hook_system_properties()
@@ -154,6 +158,29 @@ const hook_system_properties = () => {
         return mockedValue
     }
     console.log("[*] Loaded Hook SystemProperties.get(String)")
+
+    var system_property_get = Module.findExportByName(null, "__system_property_get");
+
+    if (system_property_get) {
+        Interceptor.attach(system_property_get, {
+            onEnter(args) {
+                this.key = args[0].readCString();
+                this.ret = args[1];
+            },
+            onLeave(ret) {
+                const mockedValue = props[this.key] ?? "";
+                if (mockedValue) {
+                    var p = Memory.allocUtf8String(mockedValue);
+                    Memory.copy(this.ret, p, mockedValue.length + 1);
+
+                    console.log(`[~] Hooked __system_property_get(${this.key}) => ${mockedValue}`);
+                }
+            },
+        });
+        console.log("[*] Loaded Hook __system_property_get");
+    } else {
+        console.error("[!] Unable to find __system_property_get!");
+    }
 }
 
 const hook_has_file = () => {
